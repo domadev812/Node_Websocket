@@ -1,0 +1,29 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>
+$(document).ready(function(){    
+    var url = "ws://localhost:8087/";
+    socket = new WebSocket(url);              
+    socket.onmessage = function (msg) {          
+        var message = JSON.parse(msg.data);
+        console.log(message);
+        if(message.action = "execute_result")
+        {
+            var resultPacket = {};
+            resultPacket.action = "execute_result";
+            resultPacket.result = "Success";
+            socket.send(JSON.stringify(resultPacket))  
+        }
+    };
+    socket.onopen = function () {
+        var message = {};
+        message.action = "register_client";  
+        message.nick_name = "device_2";
+        message.master = true;             
+        socket.send(JSON.stringify(message));
+    };
+})
+</script>
+<ul id="notes"></ul>
+<div id="usersConnected"></div>
+<div id="newNote">Create a new note</div>
+<input type = "button" style = "width: 200px; height: 140px;" value = "Send">

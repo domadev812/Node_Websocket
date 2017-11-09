@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Webserver Interface</title>
+        <meta charset="UTF-8">
+        <meta name="description" content="websocker server">
+        <meta name="keywords" content="HTML,CSS,XML,JavaScript, SocketIO">
+        <meta name="author" content="Aleksandr">
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="./css/style.css">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script>
+        $(document).ready(function(){
+            // Connect to our node/websockets server
+            var nickName = "";
+            var command = "on";
+            var url = "ws://localhost:8087/";
+            socket = new WebSocket(url);              
+              socket.onmessage = function (msg) {          
+                var message = JSON.parse(msg.data);
+                if(message.action == "init_devices")
+                  initDevices(message.device_list);
+                else if(message.action == "add_device")                
+                  $('#devices').append('<li>' + message.nick_name + '</li>')    
+                else if(message.action == "execute_result")      
+                  $(".execute-result").text("Execute Result: " + message.result);                      
+              };
+              socket.onopen = function () {
+                var message = {};
+                message.action = "register_server";               
+                socket.send(JSON.stringify(message));
+              };                        
+                      
+            $("#devices").on('click','li',function (){
+                nickName = $(this).text();
+                // var packets = {nick_name: nickName, command : "on", url: "google.com"}
+                // socket.emit("execute_command", packets);
+                $(".execute-result").text("");
+                $(".device-name").text("Device: " + nickName);
+                $("li").removeClass("active");
+                $(this).addClass("active");
+            });
+
+            $("#command-on").click(function(){
+                command = "on";
+            });
+            
+            $("#command-off").click(function(){
+                command = "off";
+            });
+
+            $(".execute-button").click(function(){                
+                if(nickName == "")                
+                    alert("Please select device");
+                else if($(".url-input").val() == "")                                
+                    alert("Please input url");
+                else {
+                    var message = {};
+                    message.action = "execute_command";
+                    message.nick_name = nickName;
+                    message.command = command;
+                    message.url = $(".url-input").val();
+                    
+                    socket.send(JSON.stringify(message))
+                    $(".url-input").val("");                                  
+                }
+            });            
+        })
+
+        function initDevices(data){
+          $("li").remove();
+          for(var i = 0; i < data.length; i++)
+            $('#devices').append('<li>' + data[i] + '</li>')
+        }
+        </script>
+    </head>
+    <body>
+        <div class = "container">
+            <div class = "content-title">Execute command</div>
+            <div class = "content">
+                <div class = "content-device">
+                    <div class = "content-info-tag">Device Lists</div>
+                    <ul id="devices"></ul>
+                </div>
+                <div class = "content-command">
+                    <div class = "content-info-tag command execute-result"></div>
+                    <div class = "content-info-tag command device-name">Device:</div>
+                    <div class = "content-info-tag command">Command:</div>
+                    <div class = "command-select">
+                        <label class="command-select-option">On
+                            <input id = "command-on" type="radio" checked="checked" name="command">
+                            <span class="checkmark"></span>
+                        </label>
+                        <label class="command-select-option">Off
+                            <input id = "command-off" type="radio" name="command">
+                            <span class="checkmark"></span>
+                        </label>
+                    </div>
+                    <div class = "content-info-tag command">URL:</div>
+                    <input class = "url-input" value = ""></input>
+                    <div class = "execute-button">Execute</div>
+                </div>
+            </div>
+           
+        </div>        
+    </body>
+</html>
