@@ -1,10 +1,10 @@
+'use strict';
+
 var http = require('http').Server(app);
 var WebSocketServer = require('ws').Server;
 var express = require('express');
 var app = express();
-var PORT = 3000;
-
-var wss = new WebSocketServer({port: PORT});
+var PORT = 3100;
 
 var messages = [];
 var clientSockets = new Array();
@@ -15,11 +15,24 @@ var masterSocket = null;
 
 var pendingCommand = {};
 
-app.get('/', function(req, res){
-    res.sendfile('index.html');
+http.listen(process.env.PORT || 3000, function(){
+    console.log('listening on *:' + process.env.PORT || 3000);
 });
-app.use("/css", express.static(__dirname + '/css'));
 
+var wss = new WebSocketServer({server: http});
+
+app.use('/static', express.static(__dirname + '/static'));
+    
+var bodyParser = require('body-parser')
+app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+    extended: true
+}));
+
+app.get('/', function(req, res){
+    res.sendFile(__dirname + 'index.html');
+});
+  
 wss.on('connection', function (ws) {
     console.log("Device is connected");    
     ws.on('message', function (message) {        
@@ -167,7 +180,5 @@ var registerClient = function(ws, message)
     }
 }
 
-http.listen(process.env.PORT || 3000, function(){
-    console.log('listening on', http.address().port);
-});
-console.log('Server listening at port %d', PORT);
+
+console.log('Server listening at port %d', http.address().port);
