@@ -2,7 +2,7 @@ var http = require('http').Server(app);
 var WebSocketServer = require('ws').Server;
 var express = require('express');
 var app = express();
-var PORT = 443;
+var PORT = 3000;
 
 var wss = new WebSocketServer({port: PORT});
 
