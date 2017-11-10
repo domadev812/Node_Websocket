@@ -14,6 +14,8 @@
             // Connect to our node/websockets server
             var nickName = "";
             var command = "on";
+            var command_category = "switch_screen";
+
             var url = "ws://localhost:8087/";
             socket = new WebSocket(url);              
               socket.onmessage = function (msg) {          
@@ -30,7 +32,7 @@
                 message.action = "register_server";               
                 socket.send(JSON.stringify(message));
               };                        
-                      
+
             $("#devices").on('click','li',function (){
                 nickName = $(this).text();
                 // var packets = {nick_name: nickName, command : "on", url: "google.com"}
@@ -42,31 +44,55 @@
             });
 
             $("#command-on").click(function(){
-                command = "on";
+                command = "switch_screen_on";
             });
             
             $("#command-off").click(function(){
-                command = "off";
+                command = "switch_screen_off";
             });
 
             $(".execute-button").click(function(){                
                 if(nickName == "")                
                     alert("Please select device");
-                else if($(".url-input").val() == "")                                
+                else if($(".url-input").val() == "" && command_category == "open_url")                                
                     alert("Please input url");
                 else {
                     var message = {};
                     message.action = "execute_command";
                     message.nick_name = nickName;
-                    message.command = command;
-                    message.url = $(".url-input").val();
-                    
+                    if(command_category == "switch_screen")
+                    {
+                      message.command = command;
+                      message.url = "";
+                    } else
+                    {
+                      message.command = "execute_open_url";
+                      message.url = $(".url-input").val();
+                    }                    
                     socket.send(JSON.stringify(message))
                     $(".url-input").val("");                                  
                 }
-            });            
+            });   
+            
+            $(".command-category").change(function(){
+              command_category = $(this).val();
+              initShow(command_category);
+            });   
+            initShow(command_category);         
         })
 
+        function initShow(command_category){
+          if(command_category == "switch_screen")
+            {
+              $(".url-input").hide();
+              $(".command-select").show();
+            }
+            else
+            {
+              $(".url-input").show();
+              $(".command-select").hide();
+            }
+        }
         function initDevices(data){
           $("li").remove();
           for(var i = 0; i < data.length; i++)
@@ -85,7 +111,12 @@
                 <div class = "content-command">
                     <div class = "content-info-tag command execute-result"></div>
                     <div class = "content-info-tag command device-name">Device:</div>
-                    <div class = "content-info-tag command">Command:</div>
+                    <div class = "content-info-tag command">Command:
+                      <select class="command-category">
+                        <option value="switch_screen">Switch Screen</option>
+                        <option value="open_url">Open URL</option>                        
+                      </select>
+                    </div>
                     <div class = "command-select">
                         <label class="command-select-option">On
                             <input id = "command-on" type="radio" checked="checked" name="command">

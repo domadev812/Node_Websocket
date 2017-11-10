@@ -14,6 +14,19 @@ button:focus {
     outline: none;
 }
 
+select {
+    width: 50%;    
+    margin: 8px 0 0 20px;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    height: 30px;
+    font-size: 20px;
+    color: #FFF;
+    background-color: #109ca6;
+}
+
 ul{
     padding-left: 0px;
 }
@@ -89,8 +102,8 @@ li:hover{
 }
 
 .container .content .content-command .command-select{
-    margin-left: 50px;
-    margin-top: 10px;
+    margin-left: 120px;
+    margin-top: 20px;
 }
 .command-select-option {    
     position: relative;
