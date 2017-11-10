@@ -1,5 +1,7 @@
+var http = require('http').Server(app);
 var WebSocketServer = require('ws').Server;
-
+var express = require('express');
+var app = express();
 var PORT = 8087;
 
 var wss = new WebSocketServer({port: PORT});
@@ -12,6 +14,11 @@ var serverSocket = null;
 var masterSocket = null;
 
 var pendingCommand = {};
+
+app.get('/', function(req, res){
+    res.sendfile('index.html');
+});
+app.use("/css", express.static(__dirname + '/css'));
 
 wss.on('connection', function (ws) {
     console.log("Device is connected");    
@@ -159,4 +166,8 @@ var registerClient = function(ws, message)
         console.log("Send pendding comment to " + data.nick_name + " successfully.");
     }
 }
+
+http.listen(process.env.PORT || 3000, function(){
+    console.log('listening on', http.address().port);
+});
 console.log('Server listening at port %d', PORT);
