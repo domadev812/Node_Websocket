@@ -99,17 +99,18 @@ var executeCommand = function(message)
         }
     }
 
+    pendingCommand["nick_name"] = message.nick_name;
+    pendingCommand["command"] = message.command;
+    pendingCommand["url"] = message.url;
+    pendingCommand["state"] = "pending";
+    
     if(masterSocket != null)
     {
         var commandPacket = {};        
         commandPacket.action = "wakeup_device";
         commandPacket.nick_name = message.nick_name;     
         masterSocket.send(JSON.stringify(commandPacket));               
-        console.log("Send data to master device to wake up " + message.nick_name);
-        pendingCommand["nick_name"] = message.nick_name;
-        pendingCommand["command"] = message.command;
-        pendingCommand["url"] = message.url;
-        pendingCommand["state"] = "pending";
+        console.log("Send data to master device to wake up " + message.nick_name);        
         return;
     }
     console.log("Failure");
