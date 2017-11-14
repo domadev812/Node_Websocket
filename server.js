@@ -37,32 +37,24 @@ wss.on('connection', function (ws) {
     console.log("Device is connected");    
     ws.on('message', function (message) {        
         message = JSON.parse(message);
-        if(message.action == "register_server")
-        {            
-            console.log("Receive register server request");
+        if(message.action == "register_server")                               
             registerServer(ws);
-        } else if(message.action == "register_client"){
-            console.log("Receive register client request");
+        else if(message.action == "register_client")            
             registerClient(ws, message);
-        } else if(message.action == "execute_command"){
-            console.log("Execute command");
+        else if(message.action == "execute_command")         
             executeCommand(message);
-        } else if(message.action == "execute_result"){
-            console.log("Execute result");
-            executeResult();
-        }       
+        else if(message.action == "execute_result")            
+            executeResult();             
     });
 
-    ws.on('close', function(){
-        console.log("Disconnected")  
+    ws.on('close', function(){        
         for(var key in clientSockets)
         {            
             if(clientSockets[key] == ws)
             {
                 jsonDeviceInfo[key].state = 0;   
                 if(jsonDeviceInfo[key].master == true)
-                    masterSocket = null;                     
-                console.log(jsonDeviceInfo);
+                    masterSocket = null;                                     
                 return;        
             }
         }
@@ -92,8 +84,7 @@ var executeCommand = function(message)
                 commandPacket.action = "execute_command";
                 commandPacket.command = message.command;
                 commandPacket.url = message.url;
-                clientSocket.send(JSON.stringify(commandPacket));
-                console.log("Send data to " + message.nick_name + " successfully.");
+                clientSocket.send(JSON.stringify(commandPacket));                
                 return;
             }
         }
@@ -109,12 +100,10 @@ var executeCommand = function(message)
         var commandPacket = {};        
         commandPacket.action = "wakeup_device";
         commandPacket.nick_name = message.nick_name;     
-        masterSocket.send(JSON.stringify(commandPacket));               
-        console.log("Send data to master device to wake up " + message.nick_name);        
+        masterSocket.send(JSON.stringify(commandPacket));                         
         return;
     }
-    console.log("Failure");
-
+    
     var resultPacket = {};
     resultPacket.action = "execute_result";
     resultPacket.result = "Failure";
@@ -133,38 +122,37 @@ var registerServer = function(ws)
     message.action = "init_devices";
     message.device_list = keyArray;
 
-    serverSocket.send(JSON.stringify(message));
-    console.log("Send device list to server interface: " + JSON.stringify(message));
+    serverSocket.send(JSON.stringify(message));    
 } 
 
 var registerClient = function(ws, message)
 {  
     console.log("RegiserClient");
     var existFlag = false;
+
     for(var key in jsonDeviceInfo)
     {
         if(key == message.nick_name)
             existFlag = true;
     }    
+
     if(!existFlag)
     {
         var deviceInfo = new Array();
         deviceInfo.master = message.master;
         deviceInfo.state = 1;        
-        jsonDeviceInfo[message.nick_name] = deviceInfo;        
-        console.log("Add device");
-         if(serverSocket != null)
-         {
+        jsonDeviceInfo[message.nick_name] = deviceInfo;                
+        if(serverSocket != null)
+        {
             var data = {};
             data.action = "add_device";  
             data.nick_name = message.nick_name;
             serverSocket.send(JSON.stringify(data));
-         }
+        }
     }
-    else{
-        jsonDeviceInfo[message.nick_name].state = 1;        
-        console.log("Update device");
-    }        
+    else
+        jsonDeviceInfo[message.nick_name].state = 1;                
+
     clientSockets[message.nick_name] = ws;
     if(message.master == true)
         masterSocket = ws;
@@ -176,10 +164,8 @@ var registerClient = function(ws, message)
         data.command = pendingCommand.command;
         data.url = pendingCommand.url;
         ws.send(JSON.stringify(data));       
-        pendingCommand.state = "done";        
-        console.log("Send pendding comment to " + data.nick_name + " successfully.");
+        pendingCommand.state = "done";                
     }
 }
-
 
 console.log('Server listening at port %d', http.address().port);
