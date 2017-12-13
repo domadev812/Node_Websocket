@@ -9,29 +9,42 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
         <link rel="stylesheet" href="./css/style.css">
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="reconnecting-websocket.min.js"></script>
         <script>
         $(document).ready(function(){
             // Connect to our node/websockets server
             var nickName = "";
-            var command = "on";
+            var command = "switch_screen_on";
             var command_category = "switch_screen";
-
-            var url = "ws://localhost:8087/";
-            socket = new WebSocket(url);              
-              socket.onmessage = function (msg) {          
+            var connectionState = false;
+            var url = "ws://nodewebsocketserver.herokuapp.com";
+            // var url = "ws://localhost:3000";
+            socket = new ReconnectingWebSocket(url);    
+            socket.onerror = function(msg) {                
+            }
+            socket.onclose = function(msg) {
+                connectionState = false;
+            }
+            socket.onmessage = function (msg) {          
                 var message = JSON.parse(msg.data);
                 if(message.action == "init_devices")
                   initDevices(message.device_list);
                 else if(message.action == "add_device")                
                   $('#devices').append('<li>' + message.nick_name + '</li>')    
-                else if(message.action == "execute_result")      
-                  $(".execute-result").text("Execute Result: " + message.result);                      
-              };
-              socket.onopen = function () {
+                else if(message.action == "execute_result") {    
+                    $(".execute-result").text("Execute Result: " + message.result);   
+                    if(message.result == "Success")
+                        $(".log-history").append("<p style='color:#08c632;'>Result: " + message.result + " </p></br>");                                   
+                    else
+                        $(".log-history").append("<p style='color:#F00;'>Result: " + message.result + " </p></br>");                                   
+                }
+            };
+            socket.onopen = function () {
+                connectionState = true;
                 var message = {};
                 message.action = "register_server";               
                 socket.send(JSON.stringify(message));
-              };                        
+            };                        
 
             $("#devices").on('click','li',function (){
                 nickName = $(this).text();
@@ -56,21 +69,28 @@
                     alert("Please select device");
                 else if($(".url-input").val() == "" && command_category == "open_url")                                
                     alert("Please input url");
+                else if(!connectionState)
+                    alert("Connection Error!")
                 else {
                     var message = {};
                     message.action = "execute_command";
                     message.nick_name = nickName;
+                    $(".log-history").append("<p>Device: " + nickName + "</p>");
                     if(command_category == "switch_screen")
                     {
                       message.command = command;
+                      $(".log-history").append("<p>Command: " + command + "</p>");
                       message.url = "";
-                    } else
-                    {
+                    } else {
                       message.command = "execute_open_url";
                       message.url = $(".url-input").val();
-                    }                    
+                      $(".log-history").append("<p>Command: execute_open_url </p>");
+                      $(".log-history").append("<p>URL: " + message.url + "</p>");
+                    }         
+                    $(".log-history").append("</br>");                               
                     socket.send(JSON.stringify(message))
-                    $(".url-input").val("");                                  
+                    console.log(message);
+                    $(".url-input").val("");                                          
                 }
             });   
             
@@ -103,7 +123,7 @@
     <body>
         <div class = "container">
             <div class = "content-title">Execute command</div>
-            <div class = "content">
+            <div class = "content">                
                 <div class = "content-device">
                     <div class = "content-info-tag">Device Lists</div>
                     <ul id="devices"></ul>
@@ -131,8 +151,11 @@
                     <input class = "url-input" value = ""></input>
                     <div class = "execute-button">Execute</div>
                 </div>
-            </div>
-           
+                <div class = "content-command-log">
+                    <div class = "content-info-tag">Log</div>
+                    <div class = "log-history"></div>
+                </div>
+            </div>           
         </div>        
     </body>
 </html>

@@ -1,11 +1,13 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
 $(document).ready(function(){    
-    var url = "ws://localhost:8087/";
+    var url = "ws://nodewebsocketserver.herokuapp.com";
+    // var url = "ws://localhost:3000";
     socket = new WebSocket(url);              
     socket.onmessage = function (msg) {          
         var message = JSON.parse(msg.data);
-        console.log(message);
+        $('#command').text("time: " + message.time + "  ->  action: " + message.action + ", command: " + message.command + ", url: " + message.url);
+        console.log(message)
         if(message.action = "execute_result")
         {
             var resultPacket = {};
@@ -24,6 +26,6 @@ $(document).ready(function(){
 })
 </script>
 <ul id="notes"></ul>
-<div id="usersConnected"></div>
+<div id="command"></div>
 <div id="newNote">Create a new note</div>
 <input type = "button" style = "width: 200px; height: 140px;" value = "Send">
