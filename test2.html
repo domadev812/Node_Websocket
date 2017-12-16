@@ -1,7 +1,7 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
 $(document).ready(function(){    
-    var url = "ws://localhost:8087/";
+    var url = "ws://nodewebsocketserver.herokuapp.com";
     socket = new WebSocket(url);              
     socket.onmessage = function (msg) {          
         var message = JSON.parse(msg.data);

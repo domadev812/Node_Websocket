@@ -55,6 +55,7 @@ li:hover{
 }
 
 .container .content-title{
+    position: relative;
     height: 50px;
     background: #09c631;
     text-align: center;
@@ -210,6 +211,7 @@ li:hover{
     margin-left: 20px;
     background: #32753d;
     border: 2px solid #FFF;
+    position: relative;
 }
 
 .log-history{
@@ -219,4 +221,40 @@ li:hover{
     height: 330px;
     font-size: 14px;
     overflow-y: auto;
+}
+
+.log-clear-button{
+    position: absolute;
+    top: 15px;    
+    right: 15px;
+    padding: 4px;
+    background: #109ca6;
+    border-radius: 10px;
+    width: 70px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+.log-clear-button:hover{
+    background: #165458;
+}
+
+.server-state{
+    position: absolute;
+    top: 0;
+    right: 10px;
+}
+.connect-image{
+    float: left;
+    margin-top: 10px;
+    margin-right: 5px;
+}
+.image-state {
+    width: 20px;
+    height: 20px;
+}
+.connect-text{
+    float: left;
+    font-size: 14px;
+    margin-top: 10px;
 }

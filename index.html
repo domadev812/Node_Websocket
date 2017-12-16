@@ -24,6 +24,9 @@
             }
             socket.onclose = function(msg) {
                 connectionState = false;
+                console.log('DISCONNECTED');
+                $(".image-state").attr("src","offline.png");
+                $(".connect-text").text("DISCONNECTED");
             }
             socket.onmessage = function (msg) {          
                 var message = JSON.parse(msg.data);
@@ -40,6 +43,9 @@
                 }
             };
             socket.onopen = function () {
+                console.log('CONNECTED');
+                $(".image-state").attr("src","online.png");
+                $(".connect-text").text("CONNECTED");
                 connectionState = true;
                 var message = {};
                 message.action = "register_server";               
@@ -98,6 +104,10 @@
               command_category = $(this).val();
               initShow(command_category);
             });   
+
+            $(".log-clear-button").click(function(){
+                $(".log-history").text("");
+            });
             initShow(command_category);         
         })
 
@@ -122,7 +132,12 @@
     </head>
     <body>
         <div class = "container">
-            <div class = "content-title">Execute command</div>
+            <div class = "content-title">Execute command 
+                <div class = "server-state">
+                    <div class = "connect-image"><img class = "image-state" src = "offline.png"></div>
+                    <div class = "connect-text">DISCONNECTED</div>
+                </div>
+            </div>
             <div class = "content">                
                 <div class = "content-device">
                     <div class = "content-info-tag">Device Lists</div>
@@ -153,6 +168,7 @@
                 </div>
                 <div class = "content-command-log">
                     <div class = "content-info-tag">Log</div>
+                    <div class = "log-clear-button">clear</div>
                     <div class = "log-history"></div>
                 </div>
             </div>           
