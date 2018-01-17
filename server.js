@@ -123,7 +123,7 @@ wss = new WebSocketServer({server: http});
             console.log("Update Mode Info");
             updateModeInfo(message);
         } else if(message.action == "get_schedule_info") {
-            console.log("Update Mode Info");
+            console.log("Get Schedule Info");
             getScheduleInfo();
         } else if(message.action == "update_schedule") {
             console.log("Update Schedule Info");
@@ -269,7 +269,6 @@ var registerClient = function(ws, message)
     clientSockets[message.nick_name] = ws;
     if(message.master == true)
         masterSocket = ws;
-    console.log(jsonDeviceInfo);
 
     if(message.nick_name == pendingCommand.nick_name && pendingCommand.state == "pending")
     {
@@ -429,7 +428,6 @@ var sendUpdatedDataToClient = function(deviceName = '') {
     }
     for(var key in jsonDeviceInfo)
     {
-        console.log(key);
         if(jsonDeviceInfo[key].state == 1)
         {
             var clientSocket = clientSockets[key];
@@ -438,7 +436,9 @@ var sendUpdatedDataToClient = function(deviceName = '') {
             dataPacket.mode_list = modeJSON;
             dataPacket.schedule_list = arrayScheduleInfo;
             dataPacket.mode_device_list = modeDeviceJSON;
-            clientSocket.send(JSON.stringify(dataPacket));            
+            console.log(dataPacket);
+            if(clientSocket != null)
+                clientSocket.send(JSON.stringify(dataPacket));            
         }        
     }
 }
