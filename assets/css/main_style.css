@@ -1,0 +1,173 @@
+body, h1, h2, h3{
+  font-family: 'AileronBlack', serif;
+  font-style: normal;
+  font-weight: normal;
+}
+tr {
+  height: 60px;
+}
+th{
+  vertical-align: middle !important;
+  color: #5c5d5d;
+  font-size: 16px;
+}
+td{
+  vertical-align: middle !important;
+  color: #8b8b8b;
+  font-size: 14px;
+}
+select {
+  display: inline-block;
+  text-align-last: center;
+  width: 90%;
+  border: 0px solid #ccc;  
+  height: 30px;
+  background-color: #FFF;
+  color: #8b8b8b;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+#main{
+  margin-left: 20%;  
+}
+#mySidebar{
+  width: 20%;
+  display: block;
+  background-color: #37cca6;
+  background: linear-gradient(to bottom right, #40d283, #2bc4d7);
+}
+.save-button {
+  background: #37cca6;
+  background: linear-gradient(to bottom right, #2bc4d7, #40d283);
+  padding: 10px 50px;
+  color: white;
+}
+.delete-button {
+  background: linear-gradient(to bottom right, #c53509, #650d04);
+  padding: 10px 50px;
+  color: white;
+  margin-left: 30px;
+}
+.delete-button:hover, .save-button:hover {
+  box-shadow: 0 10px 10px 0 rgba(0,0,0,0.1),0 6px 40px 0 rgba(0,0,0,0.2) !important;
+  color: red !important;
+}
+.w3-title-bar{
+  background: #37cca6;
+  background: linear-gradient(to bottom right, #2bc4d7, #40d283);
+  text-align: center;
+}
+.w3-font-bold {
+  font-weight: bold;
+}
+.w3-bar-block .w3-bar-item {
+  font-size:20px;
+  color: white;
+  background: none;
+}
+.w3-bar-item-active {
+  color: #2b99d6 !important;
+  background-color: #FFF !important;
+}
+.w3-button:hover {
+  color: #FFF !important;
+  background-color: #11a97e !important;
+}
+.w3-content{
+  padding: 30px 100px;
+  max-width: none;
+}
+
+.mode-round{
+  width: 250px;
+  height: 250px; 
+  background: #FFF;
+  color: #F00;
+  margin: 30px auto;
+  border-radius: 40px;
+  box-shadow: 0 10px 10px 0 rgba(0,0,0,0.1),0 6px 40px 0 rgba(0,0,0,0.2) !important;
+}
+.mode-round:hover{
+  background: #37cca6;
+  background: linear-gradient(to bottom right, #38cda2, #33c9b8);
+}
+.mode-edit{
+  padding-top: 20px;
+  padding-right: 40px;
+  text-align: right;
+  color: #c3c3c3;
+  font-size: 13px;
+  cursor: pointer;
+}
+.mode-edit:hover{
+  color: #F00 !important;
+}
+.mode-image {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+}
+.mode-title{
+  color: #2b99d6;
+  margin-top: 10px;
+  font-size: 18px;
+}
+.table-top-line {
+  background: #37cca6;
+  background: linear-gradient(to right, #40d283, #2bc4d7);
+  height: 3px;
+}
+.edit-mode-logo {
+  margin: 50px 0 30px 50px;
+}
+
+.edit-mode-logo span{  
+  margin-left: 30px;
+  font-size: 20px;
+  color: #2b99d6;
+  font-weight: bold;
+}
+
+.command-input-value {
+  width: 70%;
+  outline: none;
+  border: none;
+  color: gray;
+  text-align: center;
+  border-bottom: 1px solid #d0caca;
+  padding-bottom: 3px;
+}
+
+.schedule-logo {
+  margin: 50px 0 30px 50px;
+}
+
+.add-button {
+  padding: 0px 15px 3px !important;
+  font-size: 30px;
+}
+.schedule-logo span{  
+  margin-left: 20px;
+  font-size: 20px;
+  color: #2b99d6;
+  font-weight: bold;
+}
+.schedule-time{
+  display: inline-block;
+  width: 100px !important;
+}
+.mode-property{
+  margin-bottom: 20px;
+}
+.mode-property .command-input-value {
+  color: black;
+  font-size: 16px;
+}
+.loading-text{
+  text-align: center;
+  margin-top: 10px;
+  font-size: 20px;
+}

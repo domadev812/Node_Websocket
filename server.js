@@ -7,7 +7,7 @@ var mongoose = require('mongoose');
 var mongoDB = 'mongodb://root:rootroot@ds245337.mlab.com:45337/websocketdb';
 
 var app = express();
-var PORT = 3100;
+var PORT = 3000;
 var db
 
 var messages = [];
@@ -65,7 +65,6 @@ DeviceModel.find(function (err, devices) {
     if (err) return console.error(err);
     devices.forEach(function(device) {
         jsonDeviceInfo[device.device_name] = device;    
-        jsonDeviceInfo[device.device_name].state = 0;
     })    
     if(serverSocket != null)
         registerWebUI(serverSocket);        
@@ -111,6 +110,9 @@ wss = new WebSocketServer({server: http});
         } else if(message.action == "execute_command"){
             console.log("Execute command");
             executeCommand(message);
+        } else if(message.action == "trigger_mode"){
+            console.log("Trigger command");
+            triggerMode(message);
         } else if(message.action == "execute_result"){
             console.log("Execute result");
             executeResult();
@@ -123,6 +125,9 @@ wss = new WebSocketServer({server: http});
         } else if(message.action == "update_mode") {
             console.log("Update Mode Info");
             updateModeInfo(message);
+        } else if(message.action == "delete_mode") {
+            console.log("Delete Mode Info");
+            deleteModeInfo(message);
         } else if(message.action == "get_schedule_info") {
             console.log("Get Schedule Info");
             getScheduleInfo();
@@ -327,6 +332,42 @@ var addMode = function(message) {
     }    
 }
 
+var triggerMode = function(message) {
+    if (message.mode_type) {
+        for(var key in jsonDeviceInfo)
+        {
+            if(jsonDeviceInfo[key].state == 1)
+            {
+                var clientSocket = clientSockets[key];
+                var dataPacket = {};
+                dataPacket.action = "trigger_mode";                
+                dataPacket.command = message.command
+                dataPacket.option = message.default_option
+                console.log(dataPacket);
+                if(clientSocket != null)
+                    clientSocket.send(JSON.stringify(dataPacket));            
+            }        
+        }
+    } else {
+        var modeID = message.mode_id;    
+        ModeDeviceModel.find({'mode_id': modeID}, function(err, modeDevices){
+            if (err) return handleError(err);                     
+            modeDevices.forEach(function(modeDevice) {
+                var key = modeDevice.device_name;                    
+                if(jsonDeviceInfo[key].state == 1) {
+                    var clientSocket = clientSockets[key];
+                    var dataPacket = {};
+                    dataPacket.action = "trigger_mode";                
+                    dataPacket.command = modeDevice.command
+                    dataPacket.option = modeDevice.option_value                
+                    if(clientSocket != null)
+                        clientSocket.send(JSON.stringify(dataPacket));            
+                }             
+            })                
+        })
+    }
+}
+
 var getModeInfo = function(modeID) {
     ModeDeviceModel.find({'mode_id': modeID}, function(err, modeDevices){
         if (err) return handleError(err);
@@ -335,10 +376,11 @@ var getModeInfo = function(modeID) {
             modeDeviceJSON[modeDevice.device_name] = modeDevice;                    
         })
         var message = {};
-        message.action = "get_mode_info";
+        message.action = "get_mode_info";        
         message.mode_device_list = modeDeviceJSON;             
         message.time = currentDateTime;
         serverSocket.send(JSON.stringify(message));   
+        console.log(modeDeviceJSON);
     })
 }
 
@@ -364,6 +406,29 @@ var updateModeInfo = function(message) {
     }
 }
 
+var deleteModeInfo = function(message) {
+    var modeID = message.mode_id    
+    delete jsonModeInfo[modeID]    
+    arrayScheduleInfo = arrayScheduleInfo.filter(schedule => {
+        return (schedule.mode_id != modeID) ? true : false        
+    })    
+    delete jsonModeDeviceInfo[modeID]  
+    var message = {};
+    message.action = "delete_mode";
+    message.mode_id = modeID;
+    message.error = false;
+    serverSocket.send(JSON.stringify(message));
+    sendUpdatedDataToClient();
+    ModeModel.remove({mode_id: modeID}, function(err) {
+        if (err) return console.error(err);        
+    });   
+    ModeDeviceModel.remove({mode_id: modeID}, function(err) {
+        if (err) return console.error(err);        
+    });
+    ScheduleModel.remove({mode_id: modeID}, function(err) {
+        if (err) return console.error(err);        
+    });  
+}
 var updateScheduleInfo = function(message) {
     var scheduleList = message.schedule_list;    
     scheduleList.forEach(function(schedule, index){        
@@ -404,35 +469,6 @@ var getScheduleInfo = function() {
     }
 }
 
-var makeDataPacket = function(device_name) {    
-    var schedules = [];
-    arrayScheduleInfo.map(function(obj){
-        var mode_id = obj.mode_id;
-        var schedule = {};
-        if(jsonModeInfo.hasOwnProperty(mode_id)) {
-            var mode = jsonModeInfo[mode_id];
-            schedule.mode_name = mode.mode_name;
-            schedule.day = obj.day;
-            schedule.time = obj.time+ obj.time_part;            
-            if(mode.mode_type) {                                
-                schedule.command = mode.command;
-                schedule.option = mode.default_option;
-                schedules.push(schedule);
-            } else {
-                var mode_device = jsonModeDeviceInfo[mode_id];                              
-                mode_device.map(function(obj1){
-                    if(obj1.device_name == device_name) {
-                        schedule.command = obj1.command;
-                        schedule.option = obj1.option_value;
-                        schedules.push(schedule);
-                    }
-                });
-            }
-        }
-    });   
-    return schedules; 
-}
-
 var sendUpdatedDataToClient = function(deviceName = '') {
     
     var modeJSON = {};   
@@ -446,26 +482,27 @@ var sendUpdatedDataToClient = function(deviceName = '') {
     {
         modeDeviceJSON[key] = jsonModeDeviceInfo[key];
     }
-
     if(deviceName != '') {
+        var clientSocket = clientSockets[deviceName];
         var dataPacket = {};
         dataPacket.action = "get_mode_schedule_info";
-        dataPacket.schedule_list = JSON.stringify(makeDataPacket(deviceName));
-        console.log(dataPacket);
-        var clientSocket = clientSockets[deviceName];
-        if(clientSocket != null)
-            clientSocket.send(JSON.stringify(dataPacket));         
+        dataPacket.mode_list = modeJSON;
+        dataPacket.schedule_list = arrayScheduleInfo;
+        dataPacket.mode_device_list = modeDeviceJSON;
+        clientSocket.send(JSON.stringify(dataPacket));  
         return;
     }
     for(var key in jsonDeviceInfo)
-    {        
+    {
         if(jsonDeviceInfo[key].state == 1)
         {
-            console.log(key);
             var clientSocket = clientSockets[key];
             var dataPacket = {};
             dataPacket.action = "get_mode_schedule_info";
-            dataPacket.schedule_list = JSON.stringify(makeDataPacket(key));            
+            dataPacket.mode_list = modeJSON;
+            dataPacket.schedule_list = arrayScheduleInfo;
+            dataPacket.mode_device_list = modeDeviceJSON;
+            console.log(dataPacket);
             if(clientSocket != null)
                 clientSocket.send(JSON.stringify(dataPacket));            
         }        

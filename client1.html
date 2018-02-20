@@ -1,0 +1,25 @@
+<script src="./assets/js/jquery-3.2.1.min.js"></script>
+<script src="./assets/js/reconnecting-websocket.min.js"></script>
+<script>
+  $(document).ready(function(){    
+    var url = "ws://nodewebsocketserver.herokuapp.com";
+    // var url = "ws://localhost:3000";
+    socket = new ReconnectingWebSocket(url);
+    socket.onmessage = function (msg) {          
+        var message = JSON.parse(msg.data);
+        $('#command').text("time: " + message.time + "  ->  action: " + message.action + ", command: " + message.command + ", url: " + message.url);
+        console.log(message);
+    };
+    socket.onopen = function () {
+        var message = {};
+        message.action = "register_client";  
+        message.nick_name = "Vladmir_Device";
+        message.master = false;             
+        socket.send(JSON.stringify(message));
+    };
+  });
+</script>
+<ul id="notes"></ul>
+<div id="command"></div>
+<div id="newNote">Create a new note</div>
+<input type = "button" style = "width: 200px; height: 140px;" value = "Send">

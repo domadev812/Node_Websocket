@@ -1,177 +1,543 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Webserver Interface</title>
-        <meta charset="UTF-8">
-        <meta name="description" content="websocker server">
-        <meta name="keywords" content="HTML,CSS,XML,JavaScript, SocketIO">
-        <meta name="author" content="Aleksandr">
-        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-        <link rel="stylesheet" href="./css/style.css">
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script src="reconnecting-websocket.min.js"></script>
-        <script>
-        $(document).ready(function(){
-            // Connect to our node/websockets server
-            var nickName = "";
-            var command = "switch_screen_on";
-            var command_category = "switch_screen";
-            var connectionState = false;
-            var url = "ws://nodewebsocketserver.herokuapp.com";
-            // var url = "ws://localhost:3000";
-            socket = new ReconnectingWebSocket(url);    
-            socket.onerror = function(msg) {                
-            }
-            socket.onclose = function(msg) {
-                connectionState = false;
-                console.log('DISCONNECTED');
-                $(".image-state").attr("src","offline.png");
-                $(".connect-text").text("DISCONNECTED");
-            }
-            socket.onmessage = function (msg) {          
-                var message = JSON.parse(msg.data);
-                if(message.action == "init_devices")
-                  initDevices(message.device_list);
-                else if(message.action == "add_device")                
-                  $('#devices').append('<li>' + message.nick_name + '</li>')    
-                else if(message.action == "execute_result") {    
-                    $(".execute-result").text("Execute Result: " + message.result);   
-                    if(message.result == "Success")
-                        $(".log-history").append("<p style='color:#08c632;'>Result: " + message.result + " </p></br>");                                   
-                    else
-                        $(".log-history").append("<p style='color:#F00;'>Result: " + message.result + " </p></br>");                                   
-                }
-            };
-            socket.onopen = function () {
-                console.log('CONNECTED');
-                $(".image-state").attr("src","online.png");
-                $(".connect-text").text("CONNECTED");
-                connectionState = true;
-                var message = {};
-                message.action = "register_server";               
-                socket.send(JSON.stringify(message));
-            };                        
-
-            $("#devices").on('click','li',function (){
-                nickName = $(this).text();
-                // var packets = {nick_name: nickName, command : "on", url: "google.com"}
-                // socket.emit("execute_command", packets);
-                $(".execute-result").text("");
-                $(".device-name").text("Device: " + nickName);
-                $("li").removeClass("active");
-                $(this).addClass("active");
-            });
-
-            $("#command-on").click(function(){
-                command = "switch_screen_on";
-            });
-            
-            $("#command-off").click(function(){
-                command = "switch_screen_off";
-            });
-
-            $(".execute-button").click(function(){                
-                if(nickName == "")                
-                    alert("Please select device");
-                else if($(".url-input").val() == "" && command_category == "open_url")                                
-                    alert("Please input url");
-                else if(!connectionState)
-                    alert("Connection Error!")
-                else {
-                    var message = {};
-                    message.action = "execute_command";
-                    message.nick_name = nickName;
-                    $(".log-history").append("<p>Device: " + nickName + "</p>");
-                    if(command_category == "switch_screen")
-                    {
-                      message.command = command;
-                      $(".log-history").append("<p>Command: " + command + "</p>");
-                      message.url = "";
-                    } else {
-                      message.command = "execute_open_url";
-                      message.url = $(".url-input").val();
-                      $(".log-history").append("<p>Command: execute_open_url </p>");
-                      $(".log-history").append("<p>URL: " + message.url + "</p>");
-                    }         
-                    $(".log-history").append("</br>");                               
-                    socket.send(JSON.stringify(message))
-                    console.log(message);
-                    $(".url-input").val("");                                          
-                }
-            });   
-            
-            $(".command-category").change(function(){
-              command_category = $(this).val();
-              initShow(command_category);
-            });   
-
-            $(".log-clear-button").click(function(){
-                $(".log-history").text("");
-            });
-            initShow(command_category);         
-        })
-
-        function initShow(command_category){
-          if(command_category == "switch_screen")
-            {
-              $(".url-input").hide();
-              $(".command-select").show();
-            }
-            else
-            {
-              $(".url-input").show();
-              $(".command-select").hide();
-            }
-        }
-        function initDevices(data){
-          $("li").remove();
-          for(var i = 0; i < data.length; i++)
-            $('#devices').append('<li>' + data[i] + '</li>')
-        }
-        </script>
-    </head>
-    <body>
-        <div class = "container">
-            <div class = "content-title">Execute command 
-                <div class = "server-state">
-                    <div class = "connect-image"><img class = "image-state" src = "offline.png"></div>
-                    <div class = "connect-text">DISCONNECTED</div>
-                </div>
-            </div>
-            <div class = "content">                
-                <div class = "content-device">
-                    <div class = "content-info-tag">Device Lists</div>
-                    <ul id="devices"></ul>
-                </div>
-                <div class = "content-command">
-                    <div class = "content-info-tag command execute-result"></div>
-                    <div class = "content-info-tag command device-name">Device:</div>
-                    <div class = "content-info-tag command">Command:
-                      <select class="command-category">
-                        <option value="switch_screen">Switch Screen</option>
-                        <option value="open_url">Open URL</option>                        
-                      </select>
-                    </div>
-                    <div class = "command-select">
-                        <label class="command-select-option">On
-                            <input id = "command-on" type="radio" checked="checked" name="command">
-                            <span class="checkmark"></span>
-                        </label>
-                        <label class="command-select-option">Off
-                            <input id = "command-off" type="radio" name="command">
-                            <span class="checkmark"></span>
-                        </label>
-                    </div>
-                    <div class = "content-info-tag command">URL:</div>
-                    <input class = "url-input" value = ""></input>
-                    <div class = "execute-button">Execute</div>
-                </div>
-                <div class = "content-command-log">
-                    <div class = "content-info-tag">Log</div>
-                    <div class = "log-clear-button">clear</div>
-                    <div class = "log-history"></div>
-                </div>
-            </div>           
+  <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Free Web tutorials">
+    <meta name="keywords" content="HTML,CSS,XML,JavaScript">
+    <meta name="author" content="John Doe">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./assets/css/w3.css">
+    <link rel="stylesheet" href="./assets/css/main_style.css">
+    <link rel="stylesheet" href="./assets/css/dropdown.css">
+    <link rel="stylesheet" href="./assets/css/checkbox.css">
+    <link rel="stylesheet" href="./assets/css/spinner.css">
+    <script src="./assets/js/jquery-3.2.1.min.js"></script>
+    <script src="./assets/js/reconnecting-websocket.min.js"></script>
+    <title>WebSocket Client UI</title>
+  </head>
+  <body>
+    <!-- The Modal -->
+    <div id="loading-modal" class="w3-modal">
+      <div class="w3-modal-content" style="background-color: transparent; padding-bottom:200px;">
+        <div class="w3-container">
+          <div class="loader"></div> <div class = "loading-text">Loading...</div>
+        </div>
+      </div>
+    </div>
+    <div class="w3-sidebar w3-bar-block w3-card"  id="mySidebar">
+      <button class="w3-bar-item w3-button w3-large w3-padding-48 w3-center"><img src = "./assets/images/logo.png" class = "img-logo"></button>
+        <a href="#" id = "changeModeItem" class="w3-bar-item w3-button w3-padding-32 w3-font-bold w3-center w3-bar-item-active">Change Mode</a>
+        <a href="#" id = "scheduleItem" class="w3-bar-item w3-button w3-padding-32 w3-font-bold w3-center">Schedules</a>
+        <a href="#" id = "addModeItem" class="w3-bar-item w3-button w3-padding-32 w3-font-bold w3-center">+ Mode</a>
+      </div>      
+      <div id="main">      
+        <div class="w3-teal w3-title-bar">
+          <div class="w3-container">
+            <h2 id = 'content-title'>Change Mode</h2>
+          </div>
         </div>        
-    </body>
+        <div class="w3-container w3-content">          
+        </div>      
+      </div>      
+      <script>
+        var default_command = '';
+        var default_option = '';
+        var connectionState = false;
+        var deviceList = new Array();
+        var modeList = new Array();
+        var scheduleList = new Array();
+        var modeDeviceList = new Array();
+
+        var socket;
+        var lastScheduleIndex = 0;
+        var menuItem = 0;          
+        var selectedModeID = '';        
+        var url = "ws://nodewebsocketserver.herokuapp.com";
+        // var url = "ws://localhost:3000";
+        $(document).ready(function(){                    
+          initSocket();
+          $('#loading-modal').css('display', 'flex');
+          $('.loading-text').text('Loading...');
+          $(document).click(function() {      
+            $('.wrapper-dropdown-2').removeClass('active');
+          });
+          $("#changeModeItem").click(function(){
+            if(menuItem != 0)
+            {
+              $("a").removeClass("w3-bar-item-active");
+              $(this).addClass("w3-bar-item-active");
+              $('#content-title').text('Change Mode');
+              menuItem = 0;
+            }
+          });
+          $("#scheduleItem").click(function(){
+            if(menuItem != 1)
+            {
+              $("a").removeClass("w3-bar-item-active");
+              $(this).addClass("w3-bar-item-active");
+              $('#content-title').text('Schedules');
+              menuItem = 1;
+            }
+          });
+          $("#addModeItem").click(function(){
+            if(menuItem != 2)
+            {
+              $("a").removeClass("w3-bar-item-active");
+              $(this).addClass("w3-bar-item-active");
+              $('#content-title').text('Add Mode');
+              menuItem = 2;
+            }
+          });
+          $(".w3-bar-item").click(function(){
+            changeContent(menuItem);
+          }); 
+          changeContent(menuItem);                   
+        });
+
+        function buildChangeModeUI() { 
+          $('#content-title').text('Change Mode'); 
+          $('#mode-list').html('');       
+          for(var key in modeList) {
+            var mode = modeList[key];
+            var modeID = mode.mode_id;
+            var command = mode.command;
+            var defaultOption = mode.default_option;
+            var imageName = "custom";
+            if(mode.mode_type)
+              imageName = modeID;            
+            $('#mode-list').append('<div class="w3-col m4 w3-center"> \
+              <div id="' + modeID + '" class = "mode-round" default-command = "' + command + '" default-option = "' + defaultOption + '" img-name = "' + imageName + '"> \
+                <div id="' + modeID + '_edit" mode-id="' + modeID + '" class = "mode-edit">Edit</div> \
+                <div class = "mode-image"><img id="' + modeID + '_image" src = "./assets/images/' + imageName + '.png"></div> \
+                <div id="' + modeID + '_title" class = "mode-title">' + mode.mode_name + '</div> \
+              </div> \
+            </div>');
+          }
+          $(".mode-round").hover(function(){
+            var id = $(this).attr('id');
+            var imageName = $(this).attr('img-name');
+            $("#" + id + "_edit").css('color', '#FFF');
+            $("#" + id + "_title").css('color', '#FFF');
+            $("#" + id + "_image").attr('src', './assets/images/' + imageName + '_selected.png');
+          });
+          $(".mode-round").mouseleave(function(){
+            var id = $(this).attr('id');
+            var imageName = $(this).attr('img-name');
+            $("#" + id + "_edit").css('color', '#c3c3c3');
+            $("#" + id + "_title").css('color', '#2b99d6');
+            $("#" + id + "_image").attr('src', './assets/images/' + imageName + '.png');
+          });
+          $(".mode-round").click(function(){                              
+            var r = confirm('Do you want to trigger this mode?');
+            if (r == false) return;
+            var id = $(this).attr('id');            
+            var message = {};
+            message.action = "trigger_mode";               
+            if(modeList[id].mode_type) {
+              message.mode_type = true;
+              message.command = modeList[id].command;
+              message.default_option = modeList[id].default_option
+              message.mode_type = true;
+            } else {
+              message.mode_type = false;
+              message.mode_id = id;              
+            }            
+            socket.send(JSON.stringify(message));
+          });
+          $(".mode-edit").click(function(){                
+            $(".mode-round").unbind("click");            
+            var id = $(this).attr('mode-id');
+            selectedModeID = id;
+            if(modeList[id].mode_type)
+              changeContent(3);
+            else {
+              $('#loading-modal').css('display', 'flex');
+              $('.loading-text').text('Loading...');
+              var message = {};
+              message.action = "get_mode_info";               
+              message.mode_id = id;
+              socket.send(JSON.stringify(message));
+            }
+          });
+          $('#loading-modal').css('display', 'none');
+        }
+        function changeContent(selectedMenuItem) {
+          if(selectedMenuItem == 0) {
+            $.get("change_mode.html", function(data) {
+              $(".w3-content").html(data);  
+              $('#loading-modal').css('display', 'flex');
+              buildChangeModeUI();            
+            });
+          } else if(selectedMenuItem == 1) {
+            $.get("schedule.html", function(data) {
+              $(".w3-content").html(data);
+              $('#loading-modal').css('display', 'flex');
+              $('.loading-text').text('Loading...');
+              var message = {};
+              message.action = "get_schedule_info";               
+              socket.send(JSON.stringify(message));                                            
+              $('.add-button').click(function(){
+                lastScheduleIndex ++;
+                var schedule = {'mode_id':'allon','day':'Monday','time':'9:00','time_part':'AM'};
+                scheduleList.push(schedule);
+                addSchedule(lastScheduleIndex, 'All On', 'Monday', '9:00', 'AM');
+              });
+              $('.save-button').click(function(){                
+                saveSchedule();
+              });
+            });
+          } else if(selectedMenuItem == 2) {
+            $.get("add_mode.html", function(data) {
+              $(".w3-content").html(data);  
+              var i = 1;
+              new DropDown( $('#mode-command') );
+              for(i = 1; i <= deviceList.length; i++) {
+                $('#device-list tbody').append('<tr> \
+                  <td></td> \
+                  <td> \
+                    <label class="container"><span class="device-name' + i + '">' + deviceList[i - 1] + '</span> \
+                      <input id = "check_id' + i + '" type="checkbox" checked="checked"> \
+                      <span class="checkmark"></span> \
+                    </label> \
+                  </td> \
+                  <td> \
+                    <div id="command-value' + i + '" class="wrapper-dropdown-2"><div id = "value">On</div> \
+                      <ul class="dropdown"> \
+                        <li><a href="#">On</a></li> \
+                        <li><a href="#">Off</a></li> \
+                      </ul> \
+                    </div> \
+                    <input id = "command-input-value' + i + '" class = "command-input-value" value = "https://www.google.com"> \
+                  </td> \
+                </tr>');
+                new DropDown( $('#command-value' + i) );
+                $('#command-input-value' + i).css('display', 'none');   
+                $('#command-value' + i + ' .dropdown li').on("click", {value: i}, function(event) {      
+                  $('#command-value' + event.data.value + ' #value').text($(this).text());
+                });
+                $('#check_id' + i).click(function() {
+                  var attr = $(this).attr('checked');
+                  if (typeof attr !== typeof undefined && attr !== false) {
+                    $(this).removeAttr('checked');
+                  } else {
+                    $(this).attr('checked', 'checked');
+                  }
+                });
+              }                                                     
+              $('#mode-command .dropdown li').on("click", {value: i}, function(event) {      
+                $('#mode-command #value').text($(this).text());
+                for(i = 1; i <= deviceList.length; i++) {
+                  if($(this).text() == 'Toggle Status') {
+                    $('#command-input-value' + i).css('display', 'none');
+                    $('#command-value' + i).css('display', 'inline-block');
+                  } else {
+                    $('#command-input-value' + i).css('display', 'inline-block');
+                    $('#command-value' + i).css('display', 'none');
+                  }
+                }                                  
+              });              
+              $('.save-button').click(function(){                
+                saveMode();
+              });
+            });
+          } else if(selectedMenuItem == 3) {
+            $('#content-title').text('Edit Mode');
+            $.get("edit_mode.html", function(data) {
+              $(".w3-content").html(data);              
+              for(i = 1; i <= deviceList.length; i++) {
+                if (!modeList[selectedModeID].mode_type && !modeDeviceList.hasOwnProperty(deviceList[i - 1])) continue;
+                $('#device-list tbody').append('<tr><td id="device-name' + i + '">DeviceName</td> \
+                  <td> \
+                    <div id="command-category' + i + '" class="wrapper-dropdown-2"><div id = "value">Toggle Status</div> \
+                      <ul class="dropdown"> \
+                        <li><a href="#">Toggle Status</a></li> \
+                        <li><a href="#">Open URL</a></li> \
+                      </ul> \
+                    </div> \
+                  </td> \
+                  <td> \
+                    <div id="command-value' + i + '" class="wrapper-dropdown-2"><div id = "value">On</div> \
+                      <ul class="dropdown"> \
+                        <li><a href="#">On</a></li> \
+                        <li><a href="#">Off</a></li> \
+                      </ul> \
+                    </div> \
+                    <input id = "command-input-value' + i + '" class = "command-input-value" value = "https://www.google.com">\
+                  </td></tr>');
+                  $('#device-name' + i).html(deviceList[i - 1]);
+                  if(modeList[selectedModeID].mode_type) {                    
+                    $('#command-value' + i + ' #value').text(modeList[selectedModeID].default_option);
+                    $('#command-input-value' + i).css('display', 'none');
+                    $('.save-button').css('display', 'none');                    
+                    $('.delete-button').css('display', 'none'); 
+                  } else {
+                    new DropDown( $('#command-value' + i) );
+                    $('#command-category' + i + ' #value').text(modeList[selectedModeID].command);
+                    if(modeList[selectedModeID].command == 'Toggle Status') {
+                      $('#command-input-value' + i).css('display', 'none');
+                      $('#command-value' + i).css('display', 'inline-block');
+                      $('#command-value' + i + ' #value').text(modeDeviceList[deviceList[i - 1]].option_value); 
+                      $('#command-value' + i + ' .dropdown li').on("click", {value: i}, function(event) {      
+                        $('#command-value' + event.data.value + ' #value').text($(this).text());
+                      });                     
+                    } else {
+                      $('#command-input-value' + i).css('display', 'inline-block');
+                      $('#command-value' + i).css('display', 'none');
+                      $('#command-input-value' + i).val(modeDeviceList[deviceList[i - 1]].option_value);                      
+                    }                                                           
+                  }                  
+              }
+              $('.save-button').click(function(){          
+                updateMode();
+              });
+              $('.delete-button').click(function(){          
+                deleteMode(selectedModeID);
+              });
+              if(selectedModeID != '' && selectedModeID != undefined) {                
+                var title = modeList[selectedModeID].mode_name;
+                $('.edit-mode-title').text(title);
+                if(modeList[selectedModeID].mode_type)      
+                  $('.edit-mode-logo-image').attr('src', './assets/images/' + selectedModeID + '.png');          
+                else
+                $('.edit-mode-logo-image').attr('src', './assets/images/custom.png');          
+              }
+            });            
+          }
+        }
+        function DropDown(el) {
+          this.dd = el;
+          this.initEvents();
+        }
+        DropDown.prototype = {
+          initEvents : function() {
+            var obj = this;
+            obj.dd.on('click', function(event){
+                $(this).toggleClass('active');
+                event.stopPropagation();
+            }); 
+          }
+        }
+        function addSchedule(index, modeName, day, schedule_time, schedule_timepart) {
+          $('#schedule-list tbody').append('<tr> \
+            <td> \
+              <div id="mode-category' + index + '" class="wrapper-dropdown-2"><div id = "value">' + modeName + '</div> \
+                <ul class="dropdown"> \
+                </ul> \
+              </div> \
+            </td> \
+            <td> \
+              <div id="schedule-day' + index + '" class="wrapper-dropdown-2"><div id = "value">' + day + '</div> \
+                <ul class="dropdown"> \
+                  <li><a href="#">Monday</a></li> \
+                  <li><a href="#">Tuesday</a></li> \
+                  <li><a href="#">Wednesday</a></li> \
+                  <li><a href="#">Thursday</a></li> \
+                  <li><a href="#">Friday</a></li> \
+                  <li><a href="#">Saturday</a></li> \
+                  <li><a href="#">Sunday</a></li> \
+                </ul> \
+              </div> \
+            </td> \
+            <td> \
+              <div id="schedule-time' + index + '" class="wrapper-dropdown-2 schedule-time"><div id = "value">' + schedule_time + '</div> \
+                <ul class="dropdown"> \
+                  <li><a href="#">1:00</a></li> \
+                  <li><a href="#">2:00</a></li> \
+                  <li><a href="#">3:00</a></li> \
+                  <li><a href="#">4:00</a></li> \
+                  <li><a href="#">5:00</a></li> \
+                  <li><a href="#">6:00</a></li> \
+                  <li><a href="#">7:00</a></li> \
+                  <li><a href="#">8:00</a></li> \
+                  <li><a href="#">9:00</a></li> \
+                  <li><a href="#">10:00</a></li> \
+                  <li><a href="#">11:00</a></li> \
+                  <li><a href="#">12:00</a></li> \
+                </ul> \
+              </div> \
+              <div id="schedule-timepart' + index + '" class="wrapper-dropdown-2 schedule-time"><div id = "value">' + schedule_timepart + '</div> \
+                <ul class="dropdown"> \
+                  <li><a href="#">AM</a></li> \
+                  <li><a href="#">PM</a></li> \
+                </ul> \
+              </div> \
+            </td> \
+          </tr>');
+          for(var key in modeList) {
+            $('#mode-category' + index + ' ul').append('<li mode-id="' + modeList[key].mode_id + '"><a href="#">' + modeList[key].mode_name + '</a></li>');
+          }
+          new DropDown( $('#mode-category' + index) );
+          new DropDown( $('#schedule-day' + index) );
+          new DropDown( $('#schedule-time' + index) );
+          new DropDown( $('#schedule-timepart' + index) );
+          $('#mode-category' + index + ' .dropdown li').on("click", {value: index}, function(event) {      
+            $('#mode-category' + event.data.value + ' #value').text($(this).text());
+            var modeID = $(this).attr('mode-id');
+            scheduleList[event.data.value - 1].mode_id = modeID;
+            // console.log()
+          });
+          $('#schedule-day' + index + ' .dropdown li').on("click", {value: index}, function(event) {      
+            $('#schedule-day' + event.data.value + ' #value').text($(this).text());
+            scheduleList[event.data.value - 1].day = $(this).text();
+          });
+          $('#schedule-time' + index + ' .dropdown li').on("click", {value: index}, function(event) {      
+            $('#schedule-time' + event.data.value + ' #value').text($(this).text());
+            scheduleList[event.data.value - 1].time = $(this).text();
+          });
+          $('#schedule-timepart' + index + ' .dropdown li').on("click", {value: index}, function(event) {      
+            $('#schedule-timepart' + event.data.value + ' #value').text($(this).text());
+            scheduleList[event.data.value - 1].time_part = $(this).text();
+          });          
+        }
+        function saveMode() {
+          var modeName = '';
+          var modeID = '';
+          var modeCommand = '';
+          var mode_detail = {};
+          if($('#mode-name').val() == '') {
+            alert('Please Input Mode Name');
+            return;
+          } else {
+            modeName = $('#mode-name').val();
+            modeID = modeName;
+            var i = 0, strLength = modeID.length;
+            for(i; i < strLength; i++) {            
+              modeID = modeID.replace(" ", "");            
+            }
+            modeID = modeID.toLowerCase();
+            modeCommand = $('#mode-command #value').text();
+            mode_detail.mode_name = modeName;
+            mode_detail.mode_id = modeID;
+            mode_detail.mode_command = modeCommand;
+            mode_detail.mode_type = false;            
+          }
+          $('#loading-modal').css('display', 'flex');
+          $('.loading-text').text('Saving...');
+          var deviceArray = new Array();
+          for(i = 1; i <= deviceList.length; i++) {
+            var deviceInfo = {};
+            var attr = $('#check_id' + i).attr('checked');
+            if (typeof attr !== typeof undefined && attr !== false) {
+              deviceInfo.device_name = $('.device-name' + i).text();
+              if(modeCommand == 'Toggle Status')
+                deviceInfo.option_value = $('#command-value' + i + " #value").text();                
+              else
+                deviceInfo.option_value = $('#command-input-value' + i).val();
+                deviceArray.push(deviceInfo); 
+            }
+          }
+          mode_detail.device_list = deviceArray;   
+          mode_detail.action = "add_mode";               
+          socket.send(JSON.stringify(mode_detail));       
+        }
+
+        function updateMode() {
+          $('#loading-modal').css('display', 'flex');
+          $('.loading-text').text('Saving...');
+          for(i = 1; i <= deviceList.length; i++) {
+            if (!modeDeviceList.hasOwnProperty(deviceList[i - 1])) continue;         
+            if(modeDeviceList[deviceList[i - 1]].command == 'Toggle Status')
+              modeDeviceList[deviceList[i - 1]].option_value = $('#command-value' + i + " #value").text();                
+            else
+              modeDeviceList[deviceList[i - 1]].option_value = $('#command-input-value' + i).val();                
+          }
+          var updated_mode = {};
+          updated_mode.mode_device_list = modeDeviceList;   
+          updated_mode.action = "update_mode";               
+          socket.send(JSON.stringify(updated_mode));
+          console.log('Send Update Mode: ' + JSON.stringify(updated_mode));
+        }
+        
+        function deleteMode(modeID) {
+          var delete_mode = {};
+          delete_mode.action="delete_mode";
+          delete_mode.mode_id = modeID;
+          socket.send(JSON.stringify(delete_mode));
+        }
+
+        function showSchedule() {
+          lastScheduleIndex = 0;
+          scheduleList.forEach(function(schedule){
+            lastScheduleIndex++;
+            addSchedule(lastScheduleIndex, modeList[schedule.mode_id].mode_name, schedule.day, schedule.time, schedule.time_part);                                        
+          });
+        }
+
+        function saveSchedule() {
+          $('#loading-modal').css('display', 'flex');
+          $('.loading-text').text('Saving...');
+          var updated_schedule = {};
+          updated_schedule.schedule_list = scheduleList;   
+          updated_schedule.action = "update_schedule";               
+          // console.log(scheduleList);
+          socket.send(JSON.stringify(updated_schedule));
+        }
+        function initSocket() {
+          socket = new ReconnectingWebSocket(url);    
+          socket.onerror = function(msg) {  
+            $('#loading-modal').css('display', 'none');              
+          }
+          socket.onclose = function(msg) {
+            $('#loading-modal').css('display', 'none');
+          }
+          socket.onopen = function () {
+            connectionState = true;
+            var message = {};
+            $('#loading-modal').css('display', 'flex');
+            $('.loading-text').text('Loading...');
+            message.action = "register_webui";               
+            socket.send(JSON.stringify(message));
+          };
+          socket.onmessage = function (msg) {  
+            var message = JSON.parse(msg.data);
+            if (message.action == "init_devices") {
+              deviceList = message.device_list;
+              modeList = message.mode_list;
+              if(menuItem == 0 && message.mode_flag) {
+                buildChangeModeUI();                
+                console.log("Receive Device List and Mode List");
+              } else if(message.mode_flag)
+                $('#loading-modal').css('display', 'none');
+            } else if (message.action == "add_device") {
+              deviceList.push(message.nick_name);
+              console.log("Add New Device: " + message.nick_name);
+            } else if (message.action == "add_mode_callback") {
+              $('#loading-modal').css('display', 'none');
+              if(message.error == false) {
+                var newMode = message.added_mode;
+                modeList[newMode.mode_id] = newMode;
+                console.log("Add Mode: " + JSON.stringify(newMode));
+              } else {
+                alert(message.comment);
+              }
+            } else if (message.action == "get_mode_info") {
+              $('#loading-modal').css('display', 'none');
+              modeDeviceList = message.mode_device_list;       
+              console.log("Get Device Lists");                     
+              changeContent(3);
+            } else if (message.action == "update_mode_info") {
+              $('#loading-modal').css('display', 'none');                       
+              console.log("Updated Mode Info");
+            } else if (message.action == "delete_mode") {
+              $('#loading-modal').css('display', 'none');                       
+              console.log("Deleted Mode Info");
+              delete modeList[message.mode_id]
+              changeContent(0);
+            } else if (message.action == "get_schedule_info") {
+              scheduleList = message.schedule_list;
+              showSchedule();
+              console.log("Get Schedule Lists");
+              $('#loading-modal').css('display', 'none');                       
+            } else if (message.action == "update_schedule_info") {
+              console.log("Update schedule successfully.");
+              $('#loading-modal').css('display', 'none');                       
+            } else if (message.action == "update_schedule_info_item") {
+              var scheduleItem = scheduleList[message.index];
+              scheduleItem._id = message.id;
+              console.log("Receive Created Schedule ID: " + message.id);
+            }
+          };    
+        }
+      </script>
+  </body>
 </html>
